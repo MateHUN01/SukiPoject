@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8" />
+<title>Tanulókártyák</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    color: #fff;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    overflow: hidden;
+    background: black;
+  }
+
+
+
+  .cards {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    max-width: 700px;
+    margin: auto;
+    padding: 20px;
+    height: 100%;
+    box-sizing: border-box;
+    animation: fadeIn 0.6s;
+  }
+
+  @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+
+  .card {
+    width: 100%;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(255,255,255,0.06);
+    max-width: 680px;
+  }
+
+  h2 { margin: 0 0 10px 0; color: #fff; font-size: 24px; }
+
+  img.question-img {
+    max-width: 100%;
+    border-radius: 10px;
+    margin: 12px 0;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .buttons { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
+  .small-btn {
+    background: rgba(200,0,255,0.25);
+    border: 1px solid rgba(200,0,255,0.5);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.2s;
+  }
+  .small-btn:hover { background: rgba(200,0,255,0.4); box-shadow: 0 0 10px rgba(200,0,255,0.7); }
+
+  .tooltip { 
+  color:#c0f; 
+  font-weight:bold; 
+  cursor:help; 
+  position: relative; 
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  background-color: rgba(50,0,80,0.95);
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 8px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(100% + 8px);
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.18s;
+  font-size: 14px;
+  white-space: nowrap;   /* <<< fontos: ne törjön sort */
+}
+
+.tooltip:hover .tooltiptext { 
+  visibility: visible; 
+  opacity: 1; 
+}
+  .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="bgGif"></div>
+
+<!-- Kártyák -->
+<div class="cards" id="cards">
+  <div class="card">
+    <div id="cardContent"></div>
+  </div>
+  <div class="buttons">
+    <button class="small-btn" id="prevBtn" onclick="prevCard()" style="display:none">Előző</button>
+    <button class="small-btn" id="menuBtn" onclick="menuButton()">Menü</button>
+    <button class="small-btn" id="nextBtn" onclick="nextCard()">Következő</button>
+
+  </div>
+</div>
+
+<script>
+ function menuButton() {
+      window.location.href = "main.html";
+    }
+/*
+  Csak tanulókártyák maradnak:
+  - A data változóban definiáld a kártyákat (c: card).
+  - A L: mezőben a tooltip formátuma: @szó@magyarazat@ (ahogy az eredetiben volt).
+*/
+
+const data = `
+Q: Tömbök
+c: card
+Pic: tomb.png
+L: A Python @tömb@lista@ egy dinamikus @adatszerkezet@változó méretű adatgyűjtő@, amely elemeket tárol sorrendben, @indexelve@sorszámozva@. Működése @iterálható@végigjárható ciklusban@,. A tömbök @heterogén típusokat @különböző típusú adatokat@ is képesek egyidejűleg tárolni, például számokat és szövegeket.
+
+Q: append és remove
+Pic:append.png
+c: card
+L: A list.append(x) parancs egy elemet (x) hozzáfűz a lista végéhez, míg a list.remove(x) az első előfordulását törli a megadott elemnek. Az append @destruktív módon@az eredeti listát módosítva@ bővíti a listát, míg a remove @szelektív módon @csak ha az elem létezik@ csökkenti azt. Mindkettő helyben történő művelet, tehát nem hoz létre új listát, hanem az eredetit módosítja.
+
+Q: sort() -- szortírozás
+Pic:sort.png
+c:card
+L:A @list.sort()@FONTOS@ függvény a lista elemeit növekvő sorrendbe rendezi, míg a @list.sort(reverse=True)@EXTRA ANYAG@ csökkenő sorrendet eredményez. Ez egy helyben végrehajtott művelet, tehát nem hoz létre új listát, hanem az eredetit módosítja. A sort() egy @stabil algoritmust@az egyenlő elemek eredeti sorrendjét megtartó rendezést@ használ, ami fontos lehet összetett adatoknál.
+
+Q: len()
+Pic:len.png
+c:card
+L:A len() függvény a Pythonban egy @beépített függvény@alapértelmezés szerint elérhető@, amely visszaadja egy @objektum@pl. lista, string, tuple@ @hosszát@elemek számát@. Ez egy @konstans idejű művelet@ mindig ugyanolyan gyors, függetlenül a mérettől@, és gyakran használják ciklusokban vagy feltételekben.
+
+`;
+
+// egyszerű parser (meghagyva az eredeti logikához hasonlóan)
+function parseData(txt){
+  const blocks = txt.trim().split(/\n\s*\n/);
+  const out = [];
+  for(const b of blocks){
+    const q={Q:'',c:'',Pic:'',V:[],C:'',L:''};
+    const lines = b.split('\n').map(l=>l.trim());
+    for(const l of lines){
+      if(l.startsWith('Q:')) q.Q = l.slice(2).trim();
+      else if(l.startsWith('c:')) q.c = l.slice(2).trim();
+      else if(l.startsWith('Pic:')) q.Pic = l.slice(4).trim();
+      else if(l.startsWith('V:')) q.V.push(l.slice(2).trim());
+      else if(l.startsWith('C:')) q.C = l.slice(2).trim();
+      else if(l.startsWith('L:')) q.L = l.slice(2).trim();
+    }
+    if(q.Q) out.push(q);
+  }
+  return out;
+}
+
+const allData = parseData(data);
+const cardData = allData.filter(x => x.c === "card");
+
+let cardIndex = 0;
+
+function showCard(){
+  if(cardIndex < 0) cardIndex = 0;
+  if(cardIndex >= cardData.length){
+    document.getElementById('cardContent').innerHTML = '<div style="padding:20px;font-size:20px">🎉 Vége</div>';
+    document.getElementById('nextBtn').style.display = 'none';
+    document.getElementById('prevBtn').style.display = (cardIndex>0) ? 'inline-block' : 'none';
+    return;
+  }
+
+  const c = cardData[cardIndex];
+  const safeL = c.L ? c.L.replace(/@(.*?)@(.*?)@/g, (m,p1,p2) => {
+    // p1 = címke, p2 = magyarázat
+    return `<span class="tooltip">${p1}<span class="tooltiptext">${p2}</span></span>`;
+  }) : '';
+
+  let html = `<h2>${c.Q}</h2>`;
+  if(c.Pic) html += `<img src="${c.Pic}" class="question-img" alt="${c.Q}">`;
+  html += `<p style="margin:12px 0 0 0; line-height:1.5;">${safeL}</p>`;
+
+  document.getElementById('cardContent').innerHTML = html;
+
+  document.getElementById('prevBtn').style.display = (cardIndex > 0) ? 'inline-block' : 'none';
+  // nextBtn látható marad, a nextCard() elrejti ha vége
+  document.getElementById('nextBtn').style.display = 'inline-block';
+}
+
+function nextCard(){
+  cardIndex++;
+  if(cardIndex >= cardData.length){
+    // ha kiléptünk a végére, jelezzük a végét
+    document.getElementById('cardContent').innerHTML = '<div style="padding:20px;font-size:20px">🎉 Vége</div>';
+    document.getElementById('nextBtn').style.display = 'none';
+    document.getElementById('prevBtn').style.display = (cardIndex>0)?'inline-block':'none';
+    return;
+  }
+  showCard();
+}
+
+function prevCard(){
+  if(cardIndex > 0){
+    cardIndex--;
+    showCard();
+  }
+}
+
+// automatikus indítás
+window.addEventListener('load', () => {
+  if(cardData.length === 0){
+    document.getElementById('cardContent').innerHTML = '<div style="padding:20px;font-size:18px">Nincsenek kártyák.</div>';
+    document.getElementById('nextBtn').style.display = 'none';
+  } else {
+    showCard();
+  }
+});
+</script>
+</body>
+</html>
