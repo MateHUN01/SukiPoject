@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8" />
+<title>Quiz Survival 🎮</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    color: #fff;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    overflow: hidden;
+    background: black;
+  }
+
+  /* 🔹 Háttér GIF */
+  #bgGif {
+    position: fixed;
+    scale: 40%;
+    inset: 0;
+    background: url('https://static.wikia.nocookie.net/nyancat/images/b/b9/OriginalNyan.gif') left center / cover no-repeat;
+    z-index: 0;
+  }
+
+  .center, .quiz, .settings {
+    position: relative;
+    z-index: 2;
+  }
+
+  .center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    flex-direction: column;
+  }
+
+  .menu {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* 🔹 Lila gomb dizájn */
+  .big-btn {
+        width: 160px;
+    height: 160px;
+    border-radius: 30px; /* folyékonyabb forma */
+    background: rgba(255, 255, 255, 0.08); /* áttetsző üveges háttér */
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 22px;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+
+    box-shadow: 
+        0 8px 32px rgba(31, 38, 135, 0.37),
+        inset 0 0 20px rgba(200, 0, 255, 0.2);
+
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: liquidPulse 6s infinite ease-in-out;
+}
+
+  .big-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(200,0,255,0.9);
+  }
+
+  .quiz {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    max-width: 700px;
+    margin: auto;
+    padding: 20px;
+    animation: fadeIn 0.6s;
+  }
+
+  .settings {
+    display: none;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 20px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 16px;
+    box-shadow: 0 0 20px rgba(255,255,255,0.15);
+  }
+
+  @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+
+  .card {
+    width: 100%;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(255,255,255,0.15);
+  }
+
+  .question {
+    font-size: 22px;
+    margin-bottom: 15px;
+    color: white;
+  }
+
+  img.question-img {
+    max-width: 100%;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .choice {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 10px;
+    padding: 12px;
+    color: white;
+    text-align: left;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.2s;
+  }
+
+  .choice:hover {
+    background: rgba(200,0,255,0.25);
+    box-shadow: 0 0 12px rgba(200,0,255,0.5);
+  }
+
+  .choice.correct { background: rgba(0,255,0,0.35); border-color: rgba(0,255,0,0.6); }
+  .choice.wrong { background: rgba(255,0,0,0.35); border-color: rgba(255,0,0,0.6); }
+
+  .buttons {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .small-btn {
+    background: rgba(200,0,255,0.25);
+    border: 1px solid rgba(200,0,255,0.5);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.2s;
+  }
+
+  .small-btn:hover { background: rgba(200,0,255,0.4); box-shadow: 0 0 10px rgba(200,0,255,0.7); }
+
+  .score {
+    margin-left: auto;
+    opacity: 0.95;
+    font-size: 14px;
+    color: white;
+  }
+
+  .lives {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 5px;
+    z-index: 5;
+  }
+
+  .lives img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .game-over { animation: shake 0.4s; }
+  @keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    50% { transform: translateX(10px); }
+    75% { transform: translateX(-10px); }
+    100% { transform: translateX(0); }
+  }
+
+  /* 🔹 End GIF */
+  #endGif {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 400px;
+    transform: translate(-50%, -50%);
+    z-index: 999;
+    display: none;
+    pointer-events: none;
+  }
+
+  /* 🔹 Practice végeredmény lista */
+  .wrong-list {
+    text-align: left;
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+  }
+
+  .wrong-list h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: #ff8080;
+  }
+
+  .wrong-list li {
+    margin: 5px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- 🔹 Háttér GIF -->
+<div id="bgGif"></div>
+
+<!-- Menü -->
+<div class="center" id="menu">
+  <div class="menu">
+    <div class="big-btn" onclick="startQuiz()">Start</div>
+    <div class="big-btn" onclick="openSettings()">Settings</div>
+    <div class="big-btn" onclick="openTanulokartya()">Tanulókartyák</div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="settings" id="settings">
+  <h2>⚙️ Beállítások</h2>
+  <label><input type="checkbox" id="lifeMode"> Élet alapú mód</label>
+  <div id="lifeSliderWrap" style="margin:10px 0; display:none;">
+    Max életek: <input type="range" id="lifeSlider" min="1" max="5" value="3"> <span id="lifeVal">3</span>
+  </div>
+  <label><input type="checkbox" id="practiceMode"> Practice mode</label>
+  <br><br>
+  <button class="small-btn" onclick="closeSettings()">Mentés</button>
+</div>
+
+<!-- Quiz -->
+<div class="quiz" id="quiz">
+  <div class="card" id="card">
+    <div id="question" class="question"></div>
+    <div id="imgWrap"></div>
+    <div id="choices" class="choices"></div>
+  </div>
+  <div class="buttons">
+    <button class="small-btn" onclick="backToMenu()">Vissza</button>
+    <div class="score" id="score">Pontszám: 0</div>
+  </div>
+</div>
+
+<!-- Lives -->
+<div class="lives" id="lives"></div>
+
+<!-- End GIF -->
+<img id="endGif" src="end.gif" alt="Game Over">
+
+<script>
+ function openTanulokartya() {
+      window.location.href = "cards.html";
+    }
+const data = `
+Q: Mit eredményez ez a kód?
+Pic: picture1.png
+c: Python
+V: [2232, 2015, 2183]
+V: 1500, 1510, 1520
+C: [1139, 1822, 1014]
+
+
+Q: Melyik a Tömb?
+c: Python
+V: {1,2,3}
+V: (1,2,3)
+C: [1,2,3]
+
+Q: Mit csinál a tomb.sort() parancs?
+c: Python
+V: Szortírozza a betűket
+V: Kiírja a tömbben található számokat/betűket
+C: Sorrendbe állítja a számokat
+
+`;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function parseData(txt){
+  const blocks=txt.trim().split(/\n\s*\n/);
+  const questions=[];
+  for(const b of blocks){
+    const q={Q:'',c:'',Pic:'',V:[],C:''};
+    const lines=b.split('\n').map(l=>l.trim());
+    for(const l of lines){
+      if(l.startsWith('Q:')) q.Q=l.slice(2).trim();
+      else if(l.startsWith('c:')) q.c=l.slice(2).trim();
+      else if(l.startsWith('Pic:')) q.Pic=l.slice(4).trim();
+      else if(l.startsWith('V:')) q.V.push(l.slice(2).trim());
+      else if(l.startsWith('C:')) q.C=l.slice(2).trim();
+    }
+    if(q.Q && q.C) questions.push(q);
+  }
+  return questions;
+}
+
+const allQuestions=parseData(data);
+let questions=[],index=0,score=0;
+let practice=false, lifeMode=false, maxLives=3, lives=0;
+let wrongTwice=[];
+
+function renderLives(){
+  const wrap=document.getElementById('lives');
+  wrap.innerHTML='';
+  if(practice){
+    const img=document.createElement('img');
+    img.src='infheart.png';
+    wrap.appendChild(img);
+  } else if(lifeMode){
+    for(let i=0;i<lives;i++){
+      const img=document.createElement('img');
+      img.src='heart.png';
+      wrap.appendChild(img);
+    }
+  }
+}
+
+function startQuiz(){
+  practice=document.getElementById('practiceMode').checked;
+  lifeMode=document.getElementById('lifeMode').checked;
+  maxLives=parseInt(document.getElementById('lifeSlider').value);
+  lives=lifeMode?maxLives:0;
+  wrongTwice=[];
+  questions=[...allQuestions];
+  shuffle(questions);
+  index=0; score=0;
+  document.body.classList.remove('game-over');
+  document.getElementById('endGif').style.display='none';
+  document.getElementById('bgGif').style.display='block';
+  document.getElementById('menu').style.display="none";
+  document.getElementById('settings').style.display="none";
+  document.getElementById('quiz').style.display="flex";
+  renderLives();
+  showQuestion();
+}
+
+function showQuestion(){
+  if(index>=questions.length){return endGame();}
+  const q=questions[index];
+  document.getElementById('question').innerText=q.Q;
+  const imgWrap=document.getElementById('imgWrap');
+  imgWrap.innerHTML='';
+  if(q.Pic){
+    const img=document.createElement('img');
+    img.src=q.Pic;
+    img.className='question-img';
+    img.onerror=()=>img.style.display="none";
+    imgWrap.appendChild(img);
+  }
+  const ch=document.getElementById('choices');
+  ch.innerHTML='';
+  const options=[...q.V.map(v=>({text:v,correct:false})),{text:q.C,correct:true}];
+  shuffle(options);
+  options.forEach(o=>{
+    const btn=document.createElement('div');
+    btn.className='choice';
+    btn.textContent=o.text;
+    btn.onclick=()=>select(btn,o.correct,q.C,q);
+    ch.appendChild(btn);
+  });
+  document.getElementById('score').innerText=`Pontszám: ${score}`;
+}
+
+function select(btn,isCorrect,correctText,q){
+  const all=document.querySelectorAll('.choice');
+  all.forEach(b=>b.onclick=null);
+  if(isCorrect){
+    btn.classList.add('correct');
+    score++;
+    setTimeout(nextQuestion,700);
+  } else {
+    btn.classList.add('wrong');
+    all.forEach(b=>{ if(b.textContent===correctText) b.classList.add('correct'); });
+    if(practice){
+      if(!q.retry){
+        q.retry=true;
+        questions.push(q);
+      } else {
+        wrongTwice.push({question:q.Q, answer:q.C});
+      }
+      setTimeout(nextQuestion,1000);
+    } else if(lifeMode){
+      lives--;
+      renderLives();
+      if(lives<=0){gameOver(); return;}
+      setTimeout(nextQuestion,1000);
+    } else {
+      gameOver();
+    }
+  }
+}
+
+function nextQuestion(){
+  index++;
+  if(index>=questions.length){endGame();}
+  else showQuestion();
+}
+
+function endGame(){
+  document.getElementById('bgGif').style.display='none';
+  const qElem=document.getElementById('question');
+  qElem.innerText=`🏆 Vége! Pontszám: ${score}`;
+  document.getElementById('imgWrap').innerHTML='';
+  const ch=document.getElementById('choices');
+  ch.innerHTML='';
+
+  const percent=Math.round((score/allQuestions.length)*100);
+
+  if(practice && wrongTwice.length>0){
+    const div=document.createElement('div');
+    div.className="wrong-list";
+    div.innerHTML="<h3>Többszörösen elrontott kérdések:</h3><ul>"+
+      wrongTwice.map(w=>`<li><b>Kérdés:</b> ${w.question}<br><b>Helyes válasz:</b> ${w.answer}</li>`).join('')+
+      "</ul>";
+    ch.appendChild(div);
+  }
+
+  const res=document.createElement('p');
+  res.innerHTML=`Eredmény: <b>${percent}%</b>`;
+  ch.appendChild(res);
+}
+
+function gameOver(){
+  document.body.classList.add('game-over');
+  document.getElementById('bgGif').style.display='none';
+  const qElem=document.getElementById('question');
+  qElem.innerText=`💀 Game Over! Pontszám: ${score}`;
+  document.getElementById('endGif').style.display='block';
+  const ch=document.getElementById('choices');
+  ch.innerHTML='';
+  const btn=document.createElement('button');
+  btn.className='small-btn';
+  btn.textContent='Újra játszom';
+  btn.onclick=()=>startQuiz();
+  ch.appendChild(btn);
+}
+
+function backToMenu(){
+  document.getElementById('quiz').style.display="none";
+  document.getElementById('menu').style.display="flex";
+  document.getElementById('endGif').style.display='none';
+  document.getElementById('bgGif').style.display='block';
+  document.getElementById('lives').innerHTML='';
+}
+
+function openSettings(){
+  document.getElementById('menu').style.display="none";
+  document.getElementById('settings').style.display="flex";
+}
+
+function closeSettings(){
+  document.getElementById('settings').style.display="none";
+  document.getElementById('menu').style.display="flex";
+}
+
+document.getElementById('lifeSlider').addEventListener('input', e=>{
+  document.getElementById('lifeVal').innerText=e.target.value;
+});
+
+document.getElementById('lifeMode').addEventListener('change', e=>{
+  document.getElementById('lifeSliderWrap').style.display=e.target.checked?'block':'none';
+});
+
+</script>
+</body>
+</html>
